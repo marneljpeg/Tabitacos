@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST FOOD KUNUHAY | TABITACOS</title>
+    <style>
+        :root {
+            --tabitacos-blue: #1505ee;
+            --tabitacos-yellow: #ffc300;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --text: #222;
+        }
+
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+
+        #authOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--tabitacos-blue); z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .auth-card {
+            background: white; padding: 40px; border-radius: 4px;
+            width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .auth-card h2 { color: var(--tabitacos-blue); margin-bottom: 20px; }
+        .auth-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 2px; box-sizing: border-box; }
+        .btn-primary { background: var(--tabitacos-blue); color: white; border: none; width: 100%; padding: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-guest { background: white; border: 1px solid #ccc; color: #666; width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; }
+
+        header {
+            background: var(--tabitacos-blue); padding: 15px 5%;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .nav-container { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+        .logo { color: white; font-size: 1.8rem; font-weight: bold; text-decoration: none; }
+        .search-wrapper { flex: 1; display: flex; background: white; border-radius: 2px; padding: 3px; }
+        .search-wrapper input { width: 100%; border: none; padding: 10px; outline: none; }
+        .cart-icon { color: white; cursor: pointer; font-size: 1.5rem; position: relative; }
+        #cartCount { background: var(--tabitacos-yellow); color: black; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; position: absolute; top: -5px; right: -10px; font-weight: bold; }
+
+        .main-wrapper { display: grid; grid-template-columns: 240px 1fr; max-width: 1300px; margin: 20px auto; gap: 20px; padding: 0 15px; }
+
+        aside { background: var(--white); padding: 20px; border-radius: 3px; height: fit-content; position: sticky; top: 90px; }
+        .filter-group { margin-bottom: 25px; }
+        .filter-group h3 { font-size: 1rem; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .cat-link { display: block; padding: 8px 0; color: #444; text-decoration: none; cursor: pointer; font-size: 0.9rem; }
+        .cat-link:hover, .cat-link.active { color: var(--tabitacos-blue); font-weight: bold; }
+
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+        .card { background: white; border-radius: 2px; overflow: hidden; border: 1px solid transparent; position: relative; }
+        .card:hover { border-color: var(--tabitacos-blue); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card-img { height: 180px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #eee; }
+        .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .card-body { padding: 12px; }
+        .card-title { font-size: 0.85rem; height: 35px; overflow: hidden; margin-bottom: 8px; }
+        .card-price { color: var(--tabitacos-blue); font-size: 1.1rem; font-weight: bold; }
+        .yellow-basket-btn { background: var(--tabitacos-yellow); color: black; border: none; width: 100%; padding: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; border-radius: 2px; }
+
+        .feedback-panel { background: white; padding: 20px; border-radius: 3px; }
+        .review-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .review-item:last-child { border-bottom: none; }
+        .stars { color: var(--tabitacos-yellow); font-size: 1.1rem; }
+        .review-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .review-meta-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .review-timestamp { font-size: 0.75rem; color: #aaa; }
+        .review-count-badge { background: var(--tabitacos-blue); color: white; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
+        .no-reviews { color: #aaa; font-size: 0.9rem; text-align: center; padding: 30px 0; }
+
+        .admin-panel { background: white; padding: 20px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; font-size: 0.85rem; color: #555; }
+
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+        .status-preparing { background: #fff3cd; color: #856404; }
+        .status-ready { background: #d4edda; color: #155724; }
+        .status-delivered { background: #d1ecf1; color: #0c5460; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-on-the-way { background: #e2d9f3; color: #4a235a; }
+
+        .about-panel { background: white; padding: 30px; border-radius: 3px; }
+        .about-hero { background: var(--tabitacos-blue); color: white; border-radius: 4px; padding: 35px 30px; margin-bottom: 30px; text-align: center; }
+        .about-hero h1 { margin: 0 0 8px 0; font-size: 2rem; letter-spacing: 1px; }
+        .about-hero p { margin: 0; font-size: 1rem; opacity: 0.9; }
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .about-card { border: 1px solid #f0ede8; border-radius: 4px; padding: 20px; background: #fffaf7; }
+        .about-card h3 { color: var(--tabitacos-blue); margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .about-card p, .about-card ul { margin: 0; font-size: 0.9rem; color: #444; line-height: 1.7; }
+        .about-card ul { padding-left: 18px; }
+        .contact-section { margin-top: 10px; }
+        .contact-section h2 { font-size: 1.2rem; border-bottom: 2px solid var(--tabitacos-yellow); padding-bottom: 8px; margin-bottom: 20px; }
+        .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .contact-card { display: flex; align-items: flex-start; gap: 14px; background: #fff8f5; border: 1px solid #f5ddd6; border-radius: 4px; padding: 16px; }
+        .contact-icon { width: 40px; height: 40px; min-width: 40px; background: var(--tabitacos-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .contact-label { font-size: 0.75rem; color: #999; margin: 0 0 3px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .contact-value { font-size: 0.9rem; font-weight: bold; color: #222; margin: 0; word-break: break-all; }
+        .contact-value a { color: var(--tabitacos-blue); text-decoration: none; }
+        .contact-value a:hover { text-decoration: underline; }
+        .hours-table { width: 100%; font-size: 0.88rem; }
+        .hours-table td { padding: 5px 0; }
+        .hours-table td:last-child { text-align: right; color: #555; }
+        .badge-open { background: #d4edda; color: #155724; border-radius: 3px; padding: 1px 8px; font-size: 0.75rem; }
+        .map-placeholder { background: #f5f0eb; border: 1px dashed #ccc; border-radius: 4px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; font-size: 0.85rem; margin-top: 15px; gap: 6px; }
+
+        @media (max-width: 768px) {
+            .main-wrapper { grid-template-columns: 1fr; }
+            aside { display: none; }
+            .about-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="authOverlay">
+    <div class="auth-card">
+        <h2 id="authTitle">Login to TABITACOS</h2>
+        <div id="authFields">
+            <input type="text" id="username" class="auth-input" placeholder="Email / Username">
+            <input type="password" class="auth-input" placeholder="Password">
+            <button class="btn-primary" onclick="handleAuth()">Login</button>
+            <p style="font-size: 0.8rem; margin: 15px 0;">New here? <a href="#" style="color:var(--tabitacos-blue)" onclick="toggleAuthMode()">Create Account</a></p>
+        </div>
+        <hr>
+        <button class="btn-guest" onclick="handleGuest()">Continue as Guest</button>
+    </div>
+</div>
+
+<header>
+    <div class="nav-container">
+        <a href="#" class="logo">TABITACOS</a>
+        <div class="search-wrapper">
+            <input type="text" id="mainSearch" placeholder="Search for Food, Drinks, Fries, Burritos...">
+            <button class="search-btn">Search</button>
+        </div>
+        <div class="cart-icon">
+            🛒 <span id="cartCount">0</span>
+        </div>
+    </div>
+</header>
+
+<div class="main-wrapper">
+    <aside>
+        <div class="filter-group">
+            <h3>Menu Categories</h3>
+            <div class="cat-link active" onclick="renderStore('all')">All Menu Items</div>
+            <div class="cat-link" onclick="renderStore('burgers')">Burgers & Sandwiches</div>
+            <div class="cat-link" onclick="renderStore('drinks')">Drinks</div>
+            <div class="cat-link" onclick="renderStore('fries')">Fries</div>
+            <div class="cat-link" onclick="renderStore('burritos')">Burritos</div>
+            <div class="cat-link" onclick="renderStore('tacos')">Tacos</div>
+        </div>
+        <div class="filter-group">
+            <h3>Feedback</h3>
+            <div class="cat-link" onclick="toggleSection('reviews')">Reviews & Feedback</div>
+        </div>
+        <div class="filter-group">
+            <h3>Business Tools</h3>
+            <div class="cat-link" onclick="toggleSection('inventory')">Inventory System</div>
+            <div class="cat-link" onclick="toggleSection('orders')">Order Tracking</div>
+            <div class="cat-link" onclick="toggleSection('suppliers')">Supplier List</div>
+        </div>
+        <div class="filter-group">
+            <h3>Company</h3>
+            <div class="cat-link" onclick="toggleSection('about')">About Us</div>
+            <div class="cat-link" onclick="toggleSection('contact')">Contact & Location</div>
+        </div>
+        <div class="filter-group">
+            <p id="userDisplay" style="font-size: 0.8rem; color: #666;"></p>
+            <button class="btn-guest" onclick="location.reload()">Logout</button>
+        </div>
+    </aside>
+
+    <main id="contentArea">
+        <div id="storefrontView">
+            <h2 id="categoryTitle">All Menu Items</h2>
+            <div class="product-grid" id="productGrid"></div>
+        </div>
+
+        <div id="feedbackView" style="display:none;" class="feedback-panel">
+            <h2>Customer Reviews & Feedback <span class="review-count-badge" id="reviewCountBadge">0</span></h2>
+            <div style="background: #fff9f0; padding: 15px; margin-bottom: 20px; border: 1px solid #ffe7c1; border-radius: 3px;">
+                <h4 style="margin: 0 0 10px 0;">✍️ Write a Review</h4>
+                <select id="reviewStars" class="auth-input" style="width: auto;">
+                    <option value="5">⭐⭐⭐⭐⭐ — Excellent</option>
+                    <option value="4">⭐⭐⭐⭐ — Great</option>
+                    <option value="3">⭐⭐⭐ — Okay</option>
+                    <option value="2">⭐⭐ — Poor</option>
+                    <option value="1">⭐ — Terrible</option>
+                </select>
+                <textarea id="reviewText" class="auth-input" rows="3" placeholder="Tell us about the food..."></textarea>
+                <button class="btn-primary" style="width: 200px;" onclick="addReview()">Submit Review</button>
+            </div>
+            <div id="reviewsContainer"></div>
+        </div>
+
+        <div id="adminView" style="display:none;" class="admin-panel">
+            <h2 id="adminTitle">Management Panel</h2>
+            <div id="adminTableContainer"></div>
+        </div>
+
+        <div id="aboutView" style="display:none;" class="about-panel">
+            <div class="about-hero">
+                <h1>🍟 TABITACOS</h1>
+                <p>Fast Food Kunuhay — Cebu's Home of Crispy, Saucy, and Affordable Eats</p>
+            </div>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>🏢 About the Company</h3>
+                    <p>Tabitacos is a Filipino fast food brand founded in Cebu City, dedicated to serving hot, fresh, and budget-friendly meals to every Juan. From our signature fries to hearty burgers, every bite is made with love and the freshest local ingredients.</p>
+                </div>
+                <div class="about-card">
+                    <h3>🎯 Our Mission</h3>
+                    <p>To make great-tasting, quality fast food accessible to every Filipino — whether you're grabbing a quick lunch, celebrating with family, or just craving something good after a long day.</p>
+                </div>
+                <div class="about-card">
+                    <h3>👁️ Our Vision</h3>
+                    <p>To be Cebu's most-loved homegrown fast food brand — growing from a single stall to a household name, one serving of fries at a time.</p>
+                </div>
+                <div class="about-card">
+                    <h3>💛 Core Values</h3>
+                    <ul>
+                        <li>Quality Ingredients</li>
+                        <li>Honest Pricing</li>
+                        <li>Fast & Friendly Service</li>
+                        <li>Community First</li>
+                        <li>Hygiene & Food Safety</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="contact-section" id="contactDetails">
+                <h2>Contact & Location</h2>
+                <div class="contact-grid">
+                    <div class="contact-card">
+                        <div class="contact-icon">📞</div>
+                        <div>
+                            <p class="contact-label">Phone / Hotline</p>
+                            <p class="contact-value">
+                                <a href="tel:09919007872">0991 900 7872</a><br>
+                                <a href="tel:09922189014">0992 218 9014</a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">✉️</div>
+                        <div>
+                            <p class="contact-label">Email Address</p>
+                            <p class="contact-value">
+                                <a href="mailto:vryancab@gmail.com">vryancab@gmail.com</a><br>
+                                <a href="mailto:marnelnavares1@gmail.com">marnelnavares1@gmail.com</a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">📘</div>
+                        <div>
+                            <p class="contact-label">Facebook Page</p>
+                            <p class="contact-value"><a href="https://facebook.com/mariefries" target="_blank">facebook.com/mariefries</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">📸</div>
+                        <div>
+                            <p class="contact-label">Instagram</p>
+                            <p class="contact-value"><a href="https://instagram.com/mariefries.ph" target="_blank">@mariefries.ph</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">📍</div>
+                        <div>
+                            <p class="contact-label">Store Address</p>
+                            <p class="contact-value">Abad St, Cebu City, 6000 Cebu</p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">🕐</div>
+                        <div style="width: 100%;">
+                            <p class="contact-label">Business Hours <span class="badge-open">Open Today</span></p>
+                            <table class="hours-table">
+                                <tr><td>Mon – Fri</td><td>9:00 AM – 9:00 PM</td></tr>
+                                <tr><td>Saturday</td><td>9:00 AM – 10:00 PM</td></tr>
+                                <tr><td>Sunday</td><td>10:00 AM – 8:00 PM</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="map-placeholder">
+                    <span style="font-size: 2rem;">🗺️</span>
+                    <span>Abad St, Cebu City, 6000 Cebu</span>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const REVIEWS_KEY = 'tabitacos_reviews';
+
+    const data = {
+        products: [
+            // Burgers & Sandwiches
+            { id: 1,  title: "Classic Cheese Burger",      price: "₱149", cat: "burgers",  stock: 50,  img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80" },
+            { id: 2,  title: "Double Quarter Pounder",     price: "₱229", cat: "burgers",  stock: 20,  img: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80" },
+            { id: 3,  title: "Spicy Chicken Sandwich",     price: "₱179", cat: "burgers",  stock: 35,  img: "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400&q=80" },
+            // Drinks
+            { id: 4,  title: "Iced Milk Tea",              price: "₱89",  cat: "drinks",   stock: 100, img: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&q=80" },
+            { id: 5,  title: "Fresh Orange Juice",         price: "₱75",  cat: "drinks",   stock: 40,  img: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&q=80" },
+            { id: 6,  title: "Premium Dark Coffee",        price: "₱110", cat: "drinks",   stock: 60,  img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&q=80" },
+            { id: 7,  title: "Soft Drinks (Coke/Sprite)",  price: "₱45",  cat: "drinks",   stock: 200, img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&q=80" },
+            // Fries
+            { id: 8,  title: "Large French Fries",         price: "₱65",  cat: "fries",    stock: 150, img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80" },
+            { id: 9, title: "Sour Cream Fries",           price: "₱85",  cat: "fries",    stock: 85,  img: "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=400&q=80" },
+            // Burritos (2 products)
+            { id: 10, title: "Beef & Bean Burrito",        price: "₱189", cat: "burritos", stock: 45,  img: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&q=80" },
+            // Tacos (2 products)
+            { id: 11, title: "Crispy Fish Taco",           price: "₱129", cat: "tacos",    stock: 60,  img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80" },
+            { id: 12, title: "Loaded Beef Taco",           price: "₱145", cat: "tacos",    stock: 55,  img: "https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=400&q=80" },
+        ],
+        orders: [
+            { id: "ORD-001", customer: "John Doe",       items: "Cheese Burger x1, Large Fries x1", total: "₱214", status: "Delivered",   time: "10:15 AM" },
+            { id: "ORD-002", customer: "Maria Santos",   items: "Spicy Chicken Burrito x2",         total: "₱350", status: "Preparing",   time: "11:02 AM" },
+            { id: "ORD-003", customer: "Renz Alcantara", items: "Beef & Bean Burrito x1, Milk Tea", total: "₱278", status: "Ready",       time: "11:30 AM" },
+            { id: "ORD-004", customer: "Clarisse Tan",   items: "Loaded Beef Taco x2, Coke x1",    total: "₱335", status: "On the Way",  time: "11:45 AM" },
+            { id: "ORD-005", customer: "Guest_421",      items: "Sour Cream Fries x1, OJ x1",      total: "₱160", status: "Cancelled",   time: "12:00 PM" },
+            { id: "ORD-006", customer: "Jhed Navarez",   items: "Crispy Fish Taco x3",              total: "₱387", status: "Preparing",   time: "12:10 PM" },
+            { id: "ORD-007", customer: "Lovely Quisao",  items: "Double Quarter Pounder x1",        total: "₱229", status: "Ready",       time: "12:25 PM" },
+        ],
+        suppliers: [
+            { name: "Fresh Farms Meat Co.",        contact: "0917-234-5678", category: "Meat & Poultry",    rating: "4.9/5", status: "Active"   },
+            { name: "Beverage World Inc.",          contact: "0918-876-5432", category: "Beverages",         rating: "4.7/5", status: "Active"   },
+            { name: "Golden Harvest Produce",       contact: "0919-111-2233", category: "Vegetables & Herbs",rating: "4.8/5", status: "Active"   },
+            { name: "Cebu Dairy & Cheese Hub",      contact: "0920-456-7890", category: "Dairy Products",    rating: "4.6/5", status: "Active"   },
+            { name: "Spice Route Trading PH",       contact: "0921-654-3210", category: "Spices & Sauces",   rating: "4.5/5", status: "Active"   },
+            { name: "Pacific Seafood Distributors", contact: "0922-789-0123", category: "Seafood",           rating: "4.7/5", status: "Active"   },
+            { name: "VisMin Packaging Solutions",   contact: "0923-321-0987", category: "Packaging",         rating: "4.4/5", status: "Inactive" },
+        ]
+    };
+
+    let cartCount = 0;
+    let currentUser = "";
+    let currentCategory = "all";
+
+    // ── REVIEW PERSISTENCE ──────────────────────────────────────────────
+    const defaultReviews = [
+        {
+
+        }
+    ];
+
+    function loadReviews() {
+        try {
+            const stored = localStorage.getItem(REVIEWS_KEY);
+            if (!stored) { saveReviews(defaultReviews); return [...defaultReviews]; }
+            return JSON.parse(stored);
+        } catch(e) { return [...defaultReviews]; }
+    }
+
+    function saveReviews(reviews) {
+        try { localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews)); }
+        catch(e) { console.warn("Could not save reviews:", e); }
+    }
+
+    function formatTimestamp() {
+        const now = new Date();
+        return now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+            + ' • ' + now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHTML(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderReviews() {
+        const reviews = loadReviews();
+        const container = document.getElementById('reviewsContainer');
+        const badge = document.getElementById('reviewCountBadge');
+        badge.innerText = reviews.length + (reviews.length === 1 ? ' Review' : ' Reviews');
+        if (reviews.length === 0) {
+            container.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to share your experience! 🍟</p>';
+            return;
+        }
+        container.innerHTML = reviews.map(r => `
+            <div class="review-item">
+                <div class="stars">${'⭐'.repeat(r.stars)}</div>
+                <div class="review-meta">
+                    <div class="review-meta-left">
+                        <strong>${escapeHTML(r.user)}</strong>
+                        ${r.verified ? '<small>(Verified Buyer)</small>' : ''}
+                    </div>
+                    <span class="review-timestamp">${r.timestamp}</span>
+                </div>
+                <p style="margin: 6px 0 0 0; font-size: 0.9rem; color: #444;">${escapeHTML(r.text)}</p>
+            </div>
+        `).join('');
+    }
+
+    function addReview() {
+        const stars = parseInt(document.getElementById('reviewStars').value);
+        const text = document.getElementById('reviewText').value.trim();
+        if (text === "") return alert("Please write a comment before submitting.");
+        const reviews = loadReviews();
+        reviews.unshift({ user: currentUser, stars, text, timestamp: formatTimestamp(), verified: true });
+        saveReviews(reviews);
+        renderReviews();
+        document.getElementById('reviewText').value = "";
+    }
+
+    // ── AUTH ────────────────────────────────────────────────────────────
+    function toggleAuthMode() {
+        const title = document.getElementById('authTitle');
+        title.innerText = title.innerText === "Login to Tabitacos"
+            ? "Create Tabitacos Account" : "Login to Tabitacos";
+    }
+
+    function handleAuth() {
+        const user = document.getElementById('username').value.trim();
+        if (user === "") return alert("Please enter a username");
+        currentUser = user; finalizeLogin();
+    }
+
+    function handleGuest() {
+        currentUser = "Guest_" + Math.floor(Math.random() * 1000); finalizeLogin();
+    }
+
+    function finalizeLogin() {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('userDisplay').innerText = "Logged in as: " + currentUser;
+        renderStore('all');
+    }
+
+    // ── NAVIGATION ──────────────────────────────────────────────────────
+    function hideAll() {
+        document.getElementById('storefrontView').style.display = "none";
+        document.getElementById('adminView').style.display = "none";
+        document.getElementById('feedbackView').style.display = "none";
+        document.getElementById('aboutView').style.display = "none";
+    }
+
+    function showStore() { hideAll(); document.getElementById('storefrontView').style.display = "block"; }
+
+    function toggleSection(section) {
+        hideAll();
+        const container = document.getElementById('adminTableContainer');
+        if (section === 'reviews') {
+            document.getElementById('feedbackView').style.display = "block";
+            renderReviews();
+        } else if (section === 'about') {
+            document.getElementById('aboutView').style.display = "block";
+        } else if (section === 'contact') {
+            document.getElementById('aboutView').style.display = "block";
+            setTimeout(() => document.getElementById('contactDetails').scrollIntoView({ behavior: 'smooth' }), 100);
+        } else {
+            document.getElementById('adminView').style.display = "block";
+            renderAdminTable(section, container);
+        }
+    }
+
+    function statusClass(status) {
+        const map = {
+            'Preparing': 'status-preparing',
+            'Ready': 'status-ready',
+            'Delivered': 'status-delivered',
+            'Cancelled': 'status-cancelled',
+            'On the Way': 'status-on-the-way'
+        };
+        return map[status] || '';
+    }
+
+    function renderAdminTable(section, container) {
+        const title = document.getElementById('adminTitle');
+        if (section === 'inventory') {
+            title.innerText = "Inventory Management";
+            container.innerHTML = `
+                <table>
+                    <tr><th>Item</th><th>Category</th><th>Stock</th><th>Stock Level</th></tr>
+                    ${data.products.map(p => {
+                        const pct = Math.min(100, Math.round((p.stock / 200) * 100));
+                        const color = p.stock < 30 ? '#ee4d2d' : p.stock < 70 ? '#ffc300' : '#28a745';
+                        return `<tr>
+                            <td>${p.title}</td>
+                            <td style="text-transform:capitalize">${p.cat}</td>
+                            <td>${p.stock}</td>
+                            <td><div style="background:#eee;border-radius:3px;height:8px;width:100px;overflow:hidden">
+                                <div style="background:${color};height:100%;width:${pct}%"></div>
+                            </div></td>
+                        </tr>`;
+                    }).join('')}
+                </table>`;
+        } else if (section === 'orders') {
+            title.innerText = "Order Tracking";
+            container.innerHTML = `
+                <table>
+                    <tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th></tr>
+                    ${data.orders.map(o => `
+                        <tr>
+                            <td><strong>${o.id}</strong></td>
+                            <td>${o.customer}</td>
+                            <td style="font-size:0.82rem;color:#555">${o.items}</td>
+                            <td><strong>${o.total}</strong></td>
+                            <td style="font-size:0.82rem;color:#888">${o.time}</td>
+                            <td><span class="status-badge ${statusClass(o.status)}">${o.status}</span></td>
+                        </tr>`).join('')}
+                </table>`;
+        } else if (section === 'suppliers') {
+            title.innerText = "Authorized Suppliers";
+            container.innerHTML = `
+                <table>
+                    <tr><th>Supplier Name</th><th>Category</th><th>Contact</th><th>Rating</th><th>Status</th></tr>
+                    ${data.suppliers.map(s => `
+                        <tr>
+                            <td><strong>${s.name}</strong></td>
+                            <td>${s.category}</td>
+                            <td style="font-size:0.82rem;color:#555">${s.contact}</td>
+                            <td style="color:#ffc300;font-weight:bold">${s.rating}</td>
+                            <td><span class="status-badge ${s.status === 'Active' ? 'status-ready' : 'status-cancelled'}">${s.status}</span></td>
+                        </tr>`).join('')}
+                </table>`;
+        }
+    }
+
+    // ── STORE ───────────────────────────────────────────────────────────
+    function renderStore(category = 'all') {
+        showStore();
+        currentCategory = category;
+        document.querySelectorAll('.cat-link').forEach(l => l.classList.remove('active'));
+
+        const labels = { all: 'All Menu Items', burgers: 'Burgers & Sandwiches', drinks: 'Drinks', fries: 'Fries', burritos: 'Burritos', tacos: 'Tacos' };
+        document.getElementById('categoryTitle').innerText = labels[category] || category;
+
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        const filtered = category === 'all' ? data.products : data.products.filter(p => p.cat === category);
+
+        filtered.forEach(p => {
+            grid.innerHTML += `
+                <div class="card">
+                    <div class="card-img">
+                        <img src="${p.img}" alt="${escapeHTML(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<span style=color:#aaa>${p.cat.toUpperCase()}</span>'">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">${p.title}</div>
+                        <div class="card-price">${p.price}</div>
+                        <button class="yellow-basket-btn" onclick="addToCart()">🧺 Add to Basket</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function addToCart() {
+        cartCount++;
+        document.getElementById('cartCount').innerText = cartCount;
+        alert("Added to Yellow Basket!");
+    }
+
+    document.getElementById('mainSearch').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        data.products.forEach(p => {
+            if ((currentCategory === 'all' || p.cat === currentCategory) && p.title.toLowerCase().includes(term)) {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div class="card-img">
+                            <img src="${p.img}" alt="${escapeHTML(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<span style=color:#aaa>${p.cat.toUpperCase()}</span>'">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">${p.title}</div>
+                            <div class="card-price">${p.price}</div>
+                            <button class="yellow-basket-btn" onclick="addToCart()">🧺 Add to Basket</button>
+                        </div>
+                    </div>`;
+            }
+        });
+    });
+</script>
+</body>
+</html>
